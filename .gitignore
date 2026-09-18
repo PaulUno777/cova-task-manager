@@ -1,0 +1,83 @@
+# ============================================================
+# OS / IDE
+# ============================================================
+
+.DS_Store
+.idea/
+.vscode/
+.cursor
+*.iml
+
+# ============================================================
+# Environment / Secrets
+# ============================================================
+
+.env
+.env.*
+!.env.example
+
+*.pem
+*.key
+
+# ============================================================
+# Java / Maven / Spring Boot
+# ============================================================
+
+backend/target/
+backend/.mvn/timing.properties
+
+# Logs
+*.log
+logs/
+
+# ============================================================
+# Node / React / Vite
+# ============================================================
+
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ============================================================
+# Flutter / Dart
+# ============================================================
+
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/.idea/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/ios/Flutter/ephemeral/
+
+# ============================================================
+# Coverage
+# ============================================================
+
+coverage/
+*.lcov
+
+# ============================================================
+# Docker
+# ============================================================
+
+docker-compose.override.yml
+
+# ============================================================
+# Temporary files
+# ============================================================
+
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
