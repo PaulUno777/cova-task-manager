@@ -2,13 +2,11 @@
 
 **A modern full-stack task management application built for the COVA Full-Stack Developer technical assessment.**
 
-![CI](https://github.com/YOUR_USERNAME/cova-task-manager/actions/workflows/ci.yml/badge.svg)![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?logo=springboot&logoColor=white)![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![CI](https://github.com/PaulUno777/cova-task-manager/actions/workflows/ci.yml/badge.svg)![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?logo=springboot&logoColor=white)![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 
 [Overview](#overview) · [Features](#features) · [Architecture](#architecture) · [Getting Started](#getting-started) · [API](#api) · [Testing](#testing) · [Deployment](#deployment) · [Documentation](#documentation)
 
 ---
-
-
 
 ## Overview
 
@@ -36,11 +34,7 @@ The implementation focuses on:
 
 ---
 
-
-
 ## Features
-
-
 
 ### Authentication
 
@@ -49,8 +43,6 @@ The implementation focuses on:
 - JWT authentication
 - Secure password hashing
 - Protected API endpoints
-
-
 
 ### Task management
 
@@ -62,8 +54,6 @@ The implementation focuses on:
 - Search tasks
 - Pagination
 
-
-
 ### UX
 
 - Responsive interface
@@ -74,8 +64,6 @@ The implementation focuses on:
 - Form validation
 - Toast feedback
 - Accessible interactions
-
-
 
 ### Engineering
 
@@ -91,8 +79,6 @@ The implementation focuses on:
 - Google Cloud deployment
 
 ---
-
-
 
 ## Architecture
 
@@ -132,4 +118,3 @@ unnecessary distributed systems and infrastructure.
                        │     MySQL      │
                        └────────────────┘
 ```
-
