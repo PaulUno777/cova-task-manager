@@ -14,13 +14,29 @@ Short record of choices that are **already made** or **firmly planned** for this
 
 **Why:** Matches assessment requirements and keeps one codebase; only configuration changes.
 
-## JWT authentication (planned)
+## JWT authentication
 
 **Decision:** Stateless JWT validated by Spring Security; same tokens for web and optional Flutter.
 
 **Why:** Simple API-friendly auth without server-side sessions; common for SPA + mobile.
 
-**Status:** Security skeleton only in Phase 1; JWT libraries and filters come with the auth phase.
+**Status:** Implemented with stateless HMAC-signed bearer tokens. The JWT contains the authenticated user's id and email; the profile and task APIs derive ownership from that identity.
+
+## Short-lived access token + long-lived refresh token
+
+**Decision:** `register`/`login`/`refresh` return an OAuth2-style pair: a 15-minute access
+token and a 7-day refresh token (both HMAC-signed JWTs, same secret), distinguished by a
+`type: refresh` claim on the refresh token. `POST /api/auth/refresh` exchanges a refresh
+token for a new pair. No refresh tokens are persisted server-side.
+
+**Why:** A single 24h token was either too short-lived to feel "signed in" across a normal
+session or too long-lived to be a reasonable bearer credential. Splitting the two lets the
+access token stay short (limits the blast radius if it leaks) while the refresh token keeps
+the client signed in without re-entering credentials. Keeping it stateless (no DB-backed
+token table, no rotation/revocation) matches the assessment's scope — the JWT filter simply
+rejects a refresh token used as a bearer token and vice versa, which is enough to stop the
+two token types from being swapped, without adding persistence for a threat model
+(server-side logout, token theft response) this project doesn't need.
 
 ## TanStack Query (planned)
 
