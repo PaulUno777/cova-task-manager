@@ -6,10 +6,12 @@ COVA Task Manager is a **modular monolith**: one Spring Boot application owns au
 
 The domain is small; the design avoids microservices, message buses, or extra infrastructure until a real need appears.
 
-## Current implementation (Phase 1)
+## Current implementation (backend)
 
 - Spring Boot application starts with **H2** (default) or **MySQL** profile.
-- Spring Security is configured with a minimal filter chain (health, H2 console in dev). **JWT and REST controllers are not built yet.**
+- Spring Security validates stateless JWT bearer tokens. Register and login are public; `/api/auth/me` and `/api/tasks/**` require a token.
+- JPA persistence owns `UserEntity` and `TaskEntity`; controllers use request/response DTOs rather than exposing entities.
+- Task queries always scope by authenticated user id. Update and delete query by both task id and owner id.
 - Frontend is a **COVA-themed shell** (Tailwind + shadcn/ui), not the finished product UI.
 
 ## Target structure (backend)
@@ -60,10 +62,7 @@ flowchart TB
 
 ## Not built yet
 
-- User and Task entities, repositories, services
-- Auth (register, login, JWT)
-- Task CRUD, search, filtering, ownership checks
-- Global API error handling
+- React authentication and task-dashboard features
 - Production deployment on GCP
 
 These are intentional next phases after the repository foundation.

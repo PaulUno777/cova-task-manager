@@ -1,11 +1,8 @@
 spring:
-  config:
-    activate:
-      on-profile: mysql
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/cova_task_manager}
     username: ${DB_USERNAME:cova}
-    password: ${DB_PASSWORD:}
+    password: ${DB_PASSWORD:cova}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -13,4 +10,4 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true

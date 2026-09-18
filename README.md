@@ -118,3 +118,136 @@ unnecessary distributed systems and infrastructure.
                        │     MySQL      │
                        └────────────────┘
 ```
+
+See [docs/architecture.md](docs/architecture.md) for the layered package structure
+(`domain` → `application` → `infrastructure`/`presentation`) and
+[docs/decisions.md](docs/decisions.md) for why each major choice was made.
+
+---
+
+## Getting Started
+
+### Backend (Spring Boot)
+
+Requires Java 21.
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+By default this runs against an in-memory H2 database (`SPRING_PROFILES_ACTIVE=h2`) — no
+setup required. The API is available at `http://localhost:8080`.
+
+To run against MySQL instead:
+
+```bash
+docker compose up -d mysql
+SPRING_PROFILES_ACTIVE=mysql ./mvnw spring-boot:run
+```
+
+Copy [.env.example](.env.example) to `.env` to override the JWT secret, token lifetimes,
+or database credentials — see [docs/database.md](docs/database.md) for the profile
+details.
+
+### Frontend (React + Vite)
+
+Requires Node 22 and [pnpm](https://pnpm.io).
+
+```bash
+cd frontend
+pnpm install
+pnpm run dev
+```
+
+**Status:** the frontend currently ships the Phase 1 application shell only (build
+tooling, design tokens, routing skeleton). Authentication and task screens are the next
+phase of work — see [docs/architecture.md](docs/architecture.md) for the planned scope.
+
+---
+
+## API
+
+Full contract: [docs/api.md](docs/api.md).
+
+Interactive docs — no authentication required, available whenever the backend is running:
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- Raw OpenAPI 3.1 spec: `http://localhost:8080/v3/api-docs`
+
+| Method | Endpoint             | Auth                   |
+| ------ | -------------------- | ---------------------- |
+| POST   | `/api/auth/register` | public                 |
+| POST   | `/api/auth/login`    | public                 |
+| POST   | `/api/auth/refresh`  | public (refresh token) |
+| GET    | `/api/auth/me`       | required               |
+| GET    | `/api/tasks`         | required               |
+| POST   | `/api/tasks`         | required               |
+| PUT    | `/api/tasks/{id}`    | required               |
+| DELETE | `/api/tasks/{id}`    | required               |
+
+Authentication returns a short-lived access token (15 min) and a long-lived refresh token
+(7 days); see [Token response](docs/api.md#token-response) for the exact shape and how to
+use `/api/auth/refresh` to stay signed in.
+
+---
+
+## Testing
+
+```bash
+cd backend
+./mvnw test
+```
+
+Backend integration tests (`TaskApiIntegrationTests`) cover, end-to-end via MockMvc:
+
+- register → login → `/api/auth/me`
+- access/refresh token issuance and rejection of the wrong token type in either direction
+- unauthenticated requests to `/api/tasks` are rejected
+- a user cannot read, update, or delete another user's task (404, not 403 — existence isn't leaked)
+- status filtering, search, and pagination only ever return the caller's own tasks
+
+Frontend testing (lint + build) will apply once the task/auth screens exist; see CI below.
+
+---
+
+## CI/CD
+
+GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs on every push and pull request to `main` or `develop`:
+
+- **Backend:** `./mvnw test` on Java 21 (H2 profile, no external services needed)
+- **Frontend:** `pnpm install`, `pnpm run lint`, `pnpm run build`
+
+Both jobs must pass before a PR is mergeable.
+
+---
+
+## Deployment
+
+**Status:** not yet deployed — this is bonus scope per the assessment brief, planned after
+the web application (frontend included) is feature-complete.
+
+Planned approach:
+
+1. Multi-stage Dockerfiles for `backend/` (already present) and `frontend/` once its build
+   is stable.
+2. Deploy both as separate services to **Google Cloud Run** (stateless, scales to zero,
+   matches the "small assessment app" scope better than a persistent VM).
+3. **Cloud SQL for MySQL** as the managed database, reusing the `mysql` Spring profile —
+   only `DB_URL`/`DB_USERNAME`/`DB_PASSWORD`/`JWT_SECRET` change between local Docker
+   Compose and Cloud SQL, no code changes.
+4. Extend `.github/workflows/ci.yml` with a `deploy` job (build + push images, `gcloud run deploy`)
+   gated on the existing test/lint/build jobs, so nothing broken ever reaches Cloud Run.
+5. Secrets (JWT secret, DB credentials) via Cloud Run environment variables / Secret
+   Manager — never baked into the image, consistent with `.env` never being committed.
+
+---
+
+## Documentation
+
+| Document | Contents |
+| --- | --- |
+| [docs/architecture.md](docs/architecture.md) | Layered architecture, package structure |
+| [docs/api.md](docs/api.md) | Full REST contract, request/response shapes |
+| [docs/database.md](docs/database.md) | Entities, profiles, constraints |
+| [docs/decisions.md](docs/decisions.md) | Why each significant technical choice was made |
