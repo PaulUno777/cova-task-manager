@@ -4,6 +4,9 @@
 
 ![CI](https://github.com/PaulUno777/cova-task-manager/actions/workflows/ci.yml/badge.svg)![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?logo=springboot&logoColor=white)![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 
+**🔗 Live app:** <https://cova-task-manager-five.vercel.app> · **API/Swagger:** <https://cova-task-manager-8dun.onrender.com/swagger-ui.html>
+*(Backend is on Render's free tier — the first request after idling can take ~30–50s to wake up.)*
+
 [Overview](#overview) · [Features](#features) · [Architecture](#architecture) · [Getting Started](#getting-started) · [API](#api) · [Testing](#testing) · [Deployment](#deployment) · [Documentation](#documentation)
 
 ---
@@ -46,24 +49,21 @@ The implementation focuses on:
 
 ### Task management
 
-- Create tasks
-- Edit tasks
-- Delete tasks
-- View personal tasks
-- Filter by status
-- Search tasks
-- Pagination
+- Kanban board (To do / In progress / Done) with drag-and-drop status changes
+- Create, edit, delete tasks
+- Click a task to view full details (description, created/updated timestamps)
+- Filter by status, debounced search (2+ characters)
 
 ### UX
 
-- Responsive interface
+- Responsive interface (mobile-verified)
 - COVA-inspired visual direction
-- Loading states
-- Empty states
-- Error handling
+- English/French interface (persisted per-user)
+- Installable as a PWA (Add to Home Screen)
+- Loading states (skeletons), empty states, error states with retry
 - Form validation
 - Toast feedback
-- Accessible interactions
+- Accessible interactions (keyboard-operable cards/dialogs, aria labels on icon buttons)
 
 ### Engineering
 
@@ -76,7 +76,7 @@ The implementation focuses on:
 - TanStack Query
 - Docker
 - GitHub Actions
-- Google Cloud deployment
+- Deployed on Render + Vercel + Aiven MySQL
 
 ---
 
@@ -160,9 +160,9 @@ pnpm install
 pnpm run dev
 ```
 
-**Status:** the frontend currently ships the Phase 1 application shell only (build
-tooling, design tokens, routing skeleton). Authentication and task screens are the next
-phase of work — see [docs/architecture.md](docs/architecture.md) for the planned scope.
+Defaults to `VITE_API_URL=http://localhost:8080/api` (backend running locally). Copy
+[frontend/.env.example](frontend/.env.example) to `frontend/.env` to point it elsewhere (e.g.
+the deployed backend).
 
 ---
 
@@ -207,7 +207,10 @@ Backend integration tests (`TaskApiIntegrationTests`) cover, end-to-end via Mock
 - a user cannot read, update, or delete another user's task (404, not 403 — existence isn't leaked)
 - status filtering, search, and pagination only ever return the caller's own tasks
 
-Frontend testing (lint + build) will apply once the task/auth screens exist; see CI below.
+Frontend: `pnpm run lint` and `pnpm run build` are gated in CI (see below). No frontend unit
+tests yet — a deliberate scope call under time pressure; the full user journey was instead
+verified manually end-to-end against the real backend (register, Kanban CRUD, filters,
+search, i18n, PWA install, mobile layout).
 
 ---
 
@@ -224,23 +227,25 @@ Both jobs must pass before a PR is mergeable.
 
 ## Deployment
 
-Automated via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) on every push
-to `main`: builds both Docker images, pushes to Artifact Registry, deploys both to
-**Google Cloud Run** (public, scales to zero), then points the backend's CORS at the
-frontend's URL. One-time GCP setup (service account + secrets) is documented in
-[`docs/deployment.md`](docs/deployment.md).
+**Live app:** <https://cova-task-manager-five.vercel.app>
+**Live API / Swagger UI:** <https://cova-task-manager-8dun.onrender.com/swagger-ui.html>
 
-Try it locally first with the real multi-stage images:
+- Frontend on **Vercel** (free), backend on **Render** (free, deploys straight from
+  `backend/Dockerfile`), database on **Aiven** (free-tier managed **MySQL** — the real `mysql`
+  Spring profile, not an in-memory fallback). Both platforms redeploy automatically on push to
+  `main`.
+- Full setup steps and rationale (including why this replaced an earlier, fully-built and
+  locally-verified GCP Cloud Run pipeline) are in [`docs/deployment.md`](docs/deployment.md).
+- **Known tradeoff:** Render's free tier sleeps after 15 minutes idle — the first request
+  after that takes ~30–50s to wake up, then runs normally.
+
+Try the full stack locally first with the real multi-stage Docker images:
 
 ```bash
 docker compose up --build
 ```
 
-**Known tradeoff:** the deployed backend runs the `h2` (in-memory) profile, not `mysql` —
-provisioning Cloud SQL didn't fit the deployment window. MySQL support is fully implemented
-and verified locally (see [`docs/database.md`](docs/database.md)); see
-[`docs/deployment.md`](docs/deployment.md#known-tradeoff-in-memory-database) for what
-switching the live deployment to it would take.
+This runs MySQL + backend + frontend together — visit `http://localhost:8081`.
 
 ---
 
@@ -251,5 +256,6 @@ switching the live deployment to it would take.
 | [docs/architecture.md](docs/architecture.md) | Layered architecture, package structure |
 | [docs/api.md](docs/api.md) | Full REST contract, request/response shapes |
 | [docs/database.md](docs/database.md) | Entities, profiles, constraints |
+| [docs/ux.md](docs/ux.md) | Design tokens, UI states, i18n, PWA, accessibility |
 | [docs/decisions.md](docs/decisions.md) | Why each significant technical choice was made |
-| [docs/deployment.md](docs/deployment.md) | GCP Cloud Run setup, secrets, known tradeoffs |
+| [docs/deployment.md](docs/deployment.md) | Live URLs, Render/Vercel/Aiven setup, known tradeoffs |

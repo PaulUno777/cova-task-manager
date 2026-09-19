@@ -7,11 +7,14 @@
 | Profile | Use |
 | --- | --- |
 | `h2` (default) | Local run and automated tests; in-memory H2, `ddl-auto: create-drop` |
-| `mysql` | Local MySQL via Docker Compose; `application-mysql.yaml`, `ddl-auto: update` |
+| `mysql` | MySQL via Docker Compose locally, or a managed instance in production; `application-mysql.yaml`, `ddl-auto: update` |
 
 Only datasource configuration differs between profiles (`application-mysql.yaml`)—not duplicate
-business logic. Activate it with `SPRING_PROFILES_ACTIVE=mysql` after `docker compose up -d mysql`;
-verified end-to-end (register/login/tasks/refresh) against the Compose MySQL container.
+business logic. Activate it with `SPRING_PROFILES_ACTIVE=mysql`; the same profile runs against
+`docker compose up -d mysql` locally (verified end-to-end: register/login/tasks/refresh) and
+against **Aiven** (managed MySQL, free tier) in the deployed environment — only
+`DB_URL`/`DB_USERNAME`/`DB_PASSWORD` change, no code differences. See
+[`docs/deployment.md`](deployment.md).
 
 ## Entity relationship
 

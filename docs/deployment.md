@@ -1,55 +1,69 @@
-# Deployment (GCP Cloud Run)
+# Deployment
 
-**Status:** automated via [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) on every push to `main`. Requires one-time GCP setup below.
+**Live:**
+
+- Frontend: <https://cova-task-manager-five.vercel.app>
+- Backend API / Swagger UI: <https://cova-task-manager-8dun.onrender.com/swagger-ui.html>
 
 ## Architecture
 
-- **Backend** → Cloud Run service `cova-backend`, `h2` profile (in-memory — see [Known tradeoff](#known-tradeoff-in-memory-database) below).
-- **Frontend** → Cloud Run service `cova-frontend`, nginx serving the Vite build, `VITE_API_URL` baked in at build time to the backend's live URL.
-- Both images are built and pushed to **Artifact Registry**, then deployed to **Cloud Run** with `--allow-unauthenticated` (public URLs).
-- Backend is deployed first, then the frontend is built against its URL, then the backend's `CORS_ALLOWED_ORIGINS` is updated to the frontend's URL — this breaks the chicken-and-egg problem of neither URL existing before the other.
+- **Frontend** → **Vercel**, free tier. Builds `frontend/` with Vite, zero-config framework
+  detection, `VITE_API_URL` set as a build-time environment variable pointing at the Render
+  backend. SPA rewrites (`frontend/vercel.json`) so client-side routes don't 404 on refresh.
+- **Backend** → **Render**, free web service. Builds and runs `backend/Dockerfile` directly;
+  listens on Render's dynamically assigned `$PORT` (`server.port: ${PORT:8080}` in
+  `application.yaml`).
+- **Database** → **Aiven**, free-tier managed MySQL. The backend's existing `mysql` Spring
+  profile is used unchanged — only `DB_URL`/`DB_USERNAME`/`DB_PASSWORD` point at Aiven instead
+  of a local Docker container.
+- Both Vercel and Render connect directly to the GitHub repo and redeploy on push to `main` —
+  no custom CI/CD workflow needed for deployment itself (existing `.github/workflows/ci.yml`
+  still gates every push/PR with backend tests + frontend lint/build).
 
-## One-time GCP setup (console, no CLI required)
+## Why not GCP
 
-1. **Create or select a project** at [console.cloud.google.com](https://console.cloud.google.com).
-2. **Enable APIs**: "APIs & Services" → "Enable APIs and Services" → enable:
-   - Cloud Run Admin API
-   - Artifact Registry API
-3. **Create an Artifact Registry repository**: "Artifact Registry" → "Create Repository":
-   - Name: `cova`
-   - Format: Docker
-   - Region: `us-central1` (must match `GCP_REGION` in the workflow if you change it)
-4. **Create a service account**: "IAM & Admin" → "Service Accounts" → "Create Service Account":
-   - Name: `github-actions-deployer`
-   - Grant roles: **Cloud Run Admin**, **Artifact Registry Writer**, **Service Account User**
-5. **Create a JSON key**: open the service account → "Keys" tab → "Add Key" → "Create new key" → JSON. Downloads a file — keep it secret.
+The original plan was Google Cloud Run — a full GitHub Actions workflow (build, push to
+Artifact Registry, deploy, CORS wiring) was built and verified against real Docker containers
+locally. It was dropped only because there was no GCP free-tier access available at decision
+time, not for a technical reason. Render + Vercel + Aiven need no credit card, and — as a
+bonus — actually run real MySQL rather than the in-memory H2 fallback the GCP path would have
+used under time pressure. See [`docs/decisions.md`](decisions.md#deployment-render--vercel--aiven-not-gcp).
 
-## GitHub repo secrets
+## One-time setup (for reproducing this deployment)
 
-Repo → Settings → Secrets and variables → Actions → "New repository secret":
+1. **Aiven**: create a free MySQL service at [aiven.io](https://aiven.io). Note the connection
+   details (host, port, database name, username, password) — Aiven requires TLS, so the JDBC
+   URL needs `?sslMode=REQUIRED`.
+2. **Render**: sign up at [render.com](https://render.com) (GitHub OAuth, no card), "New Web
+   Service" → connect the repo → root directory `backend` → environment **Docker** (uses
+   `backend/Dockerfile` automatically). Set environment variables:
+   - `SPRING_PROFILES_ACTIVE=mysql`
+   - `DB_URL=jdbc:mysql://<aiven-host>:<port>/<database>?sslMode=REQUIRED`
+   - `DB_USERNAME`, `DB_PASSWORD` — from Aiven
+   - `JWT_SECRET` — a long random string, not the local dev default
+   - `CORS_ALLOWED_ORIGINS` — the Vercel URL (set after step 3, then redeploy)
+3. **Vercel**: sign up at [vercel.com](https://vercel.com) (GitHub OAuth, no card), import the
+   repo → root directory `frontend` → framework preset Vite (auto-detected). Set environment
+   variable `VITE_API_URL=https://<render-service>.onrender.com/api` (needed at **build** time
+   — redeploy after changing it).
+4. Circle back to Render and set `CORS_ALLOWED_ORIGINS` to the Vercel URL from step 3, then
+   redeploy the backend.
 
-| Secret | Value |
-| --- | --- |
-| `GCP_SA_KEY` | Full contents of the downloaded JSON key file |
-| `GCP_PROJECT_ID` | Your GCP project ID (not the display name) |
-| `JWT_SECRET` | A long random string — **not** the local dev default in `.env.example` |
+## Known tradeoff: free-tier cold starts
 
-Once these three secrets exist, pushing to `main` (or running the workflow manually from the Actions tab) builds, pushes, and deploys both services, printing both URLs in the final job's logs.
-
-## Known tradeoff: in-memory database
-
-The deployed backend runs the `h2` profile (in-memory), not `mysql`, for time reasons — provisioning Cloud SQL, wiring the connector, and managing its credentials is a meaningfully bigger setup than fit in the deployment window. **MySQL support is fully implemented and verified** (see [`docs/database.md`](database.md) — `application-mysql.yaml`, tested end-to-end via `docker compose up -d mysql`), it just isn't what's running in the live demo.
-
-Practical effect: data resets whenever the Cloud Run instance restarts (deploys, or scale-to-zero after idling). Fine for a graded demo; not how this would be run in production.
-
-**To switch the live deployment to MySQL later:** provision Cloud SQL for MySQL, then change `deploy.yml`'s backend `env_vars` to `SPRING_PROFILES_ACTIVE=mysql` plus `DB_URL`/`DB_USERNAME`/`DB_PASSWORD` (ideally as GitHub secrets, with `DB_URL` using the Cloud SQL Unix socket path `jdbc:mysql:///cova_task_manager?socketFactory=com.google.cloud.sql.mysql.SocketFactory&cloudSqlInstance=<connection-name>` and the Cloud SQL JDBC socket factory dependency added to `pom.xml`).
+Render's free web services sleep after 15 minutes of inactivity. The first request after that
+takes roughly 30–50 seconds to wake the instance back up; subsequent requests are normal
+speed. Acceptable for a graded demo, not how this would be run in production (a paid Render
+plan, or min-instances on a platform like Cloud Run, avoids it).
 
 ## Local full-stack verification
 
-Before ever touching GCP, verify both images actually work together locally:
+Before ever deploying, verify both images actually work together locally:
 
 ```bash
 docker compose up --build
 ```
 
-This runs MySQL + backend (`mysql` profile) + frontend (nginx, pointed at `http://localhost:8080/api`) — visit `http://localhost:8081`.
+This runs MySQL + backend (`mysql` profile) + frontend (nginx, pointed at
+`http://localhost:8080/api`) — visit `http://localhost:8081`. Verified end-to-end (register →
+create task → list) before this was ever deployed anywhere.
