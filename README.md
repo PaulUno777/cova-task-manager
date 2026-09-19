@@ -4,8 +4,7 @@
 
 ![CI](https://github.com/PaulUno777/cova-task-manager/actions/workflows/ci.yml/badge.svg)![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?logo=springboot&logoColor=white)![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 
-**🔗 Live app:** <https://cova-task-manager-five.vercel.app> · **API/Swagger:** <https://cova-task-manager-8dun.onrender.com/swagger-ui.html>
-*(Backend is on Render's free tier — the first request after idling can take ~30–50s to wake up.)*
+**🔗 Live app:** [https://cova-task-manager-five.vercel.app](https://cova-task-manager-five.vercel.app) · **API/Swagger:** [https://cova-task-manager-8dun.onrender.com/swagger-ui.html](https://cova-task-manager-8dun.onrender.com/swagger-ui.html) _(Backend is on Render's free tier the first request after idling can take ~30–50s to wake up.)_
 
 [Overview](#overview) · [Features](#features) · [Architecture](#architecture) · [Getting Started](#getting-started) · [API](#api) · [Testing](#testing) · [Deployment](#deployment) · [Documentation](#documentation)
 
@@ -170,7 +169,7 @@ the deployed backend).
 
 Full contract: [docs/api.md](docs/api.md).
 
-Interactive docs — no authentication required, available whenever the backend is running:
+Interactive docs no authentication required, available whenever the backend is running:
 
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Raw OpenAPI 3.1 spec: `http://localhost:8080/v3/api-docs`
@@ -187,8 +186,7 @@ Interactive docs — no authentication required, available whenever the backend 
 | DELETE | `/api/tasks/{id}`    | required               |
 
 Authentication returns a short-lived access token (15 min) and a long-lived refresh token
-(7 days); see [Token response](docs/api.md#token-response) for the exact shape and how to
-use `/api/auth/refresh` to stay signed in.
+(7 days);
 
 ---
 
@@ -204,7 +202,7 @@ Backend integration tests (`TaskApiIntegrationTests`) cover, end-to-end via Mock
 - register → login → `/api/auth/me`
 - access/refresh token issuance and rejection of the wrong token type in either direction
 - unauthenticated requests to `/api/tasks` are rejected
-- a user cannot read, update, or delete another user's task (404, not 403 — existence isn't leaked)
+- a user cannot read, update, or delete another user's task (404, not 403 existence isn't leaked)
 - status filtering, search, and pagination only ever return the caller's own tasks
 
 Frontend: `pnpm run lint` and `pnpm run build` are gated in CI (see below). No frontend unit
@@ -227,17 +225,16 @@ Both jobs must pass before a PR is mergeable.
 
 ## Deployment
 
-**Live app:** <https://cova-task-manager-five.vercel.app>
-**Live API / Swagger UI:** <https://cova-task-manager-8dun.onrender.com/swagger-ui.html>
+**Live app:** [https://cova-task-manager-five.vercel.app](https://cova-task-manager-five.vercel.app)
+**Live API / Swagger UI:** [https://cova-task-manager-8dun.onrender.com/swagger-ui.html](https://cova-task-manager-8dun.onrender.com/swagger-ui.html)
 
 - Frontend on **Vercel** (free), backend on **Render** (free, deploys straight from
-  `backend/Dockerfile`), database on **Aiven** (free-tier managed **MySQL** — the real `mysql`
+  `backend/Dockerfile`), database on **Aiven** (free-tier managed **MySQL** the real `mysql`
   Spring profile, not an in-memory fallback). Both platforms redeploy automatically on push to
   `main`.
 - Full setup steps and rationale (including why this replaced an earlier, fully-built and
-  locally-verified GCP Cloud Run pipeline) are in [`docs/deployment.md`](docs/deployment.md).
-- **Known tradeoff:** Render's free tier sleeps after 15 minutes idle — the first request
-  after that takes ~30–50s to wake up, then runs normally.
+  locally-verified GCP Cloud Run pipeline) are in `[docs/deployment.md](docs/deployment.md)`.
+- **Known tradeoff:** Render's free tier sleeps after 15 minutes idle the first request after that takes ~30–50s to wake up, then runs normally.
 
 Try the full stack locally first with the real multi-stage Docker images:
 
@@ -245,17 +242,17 @@ Try the full stack locally first with the real multi-stage Docker images:
 docker compose up --build
 ```
 
-This runs MySQL + backend + frontend together — visit `http://localhost:8081`.
+This runs MySQL + backend + frontend together visit `http://localhost:8081`.
 
 ---
 
 ## Documentation
 
-| Document | Contents |
-| --- | --- |
-| [docs/architecture.md](docs/architecture.md) | Layered architecture, package structure |
-| [docs/api.md](docs/api.md) | Full REST contract, request/response shapes |
-| [docs/database.md](docs/database.md) | Entities, profiles, constraints |
-| [docs/ux.md](docs/ux.md) | Design tokens, UI states, i18n, PWA, accessibility |
-| [docs/decisions.md](docs/decisions.md) | Why each significant technical choice was made |
-| [docs/deployment.md](docs/deployment.md) | Live URLs, Render/Vercel/Aiven setup, known tradeoffs |
+| Document                                     | Contents                                              |
+| -------------------------------------------- | ----------------------------------------------------- |
+| [docs/architecture.md](docs/architecture.md) | Layered architecture, package structure               |
+| [docs/api.md](docs/api.md)                   | Full REST contract, request/response shapes           |
+| [docs/database.md](docs/database.md)         | Entities, profiles, constraints                       |
+| [docs/ux.md](docs/ux.md)                     | Design tokens, UI states, i18n, PWA, accessibility    |
+| [docs/decisions.md](docs/decisions.md)       | Why each significant technical choice was made        |
+| [docs/deployment.md](docs/deployment.md)     | Live URLs, Render/Vercel/Aiven setup, known tradeoffs |
