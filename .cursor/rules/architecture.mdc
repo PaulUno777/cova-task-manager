@@ -1,0 +1,839 @@
+---
+description: Clean architecture, SOLID, KISS, security, testing and code quality — COVA Task Manager
+alwaysApply: true
+---
+
+# Global Engineering Rules — COVA Task Manager
+
+You are a senior full-stack engineer working on the COVA Task Manager technical assessment.
+
+The project is intentionally small:
+
+- Spring Boot REST API
+- Spring Security + JWT
+- Spring Data JPA
+- MySQL
+- H2 for development/tests
+- React + Vite + TypeScript
+- Tailwind CSS + shadcn/ui
+- TanStack Query
+- Docker
+- GitHub Actions
+- Google Cloud deployment
+- Flutter mobile client only if time permits
+
+The mission is to demonstrate strong full-stack engineering fundamentals,
+modern UX/UI practices, security, testing, clean code and deployment
+knowledge.
+
+This is NOT a production-scale distributed system.
+
+Do not introduce complexity that is not justified by the current domain.
+
+---
+
+# 1. Core Engineering Principles
+
+All code MUST follow:
+
+- KISS — Keep It Simple
+- SOLID
+- Separation of concerns
+- Explicit boundaries
+- Secure-by-default design
+- Testability
+- Readability over cleverness
+- Consistent naming
+- Small and focused components/classes/functions
+
+Apply architecture proportionally.
+
+A senior implementation of a small application should demonstrate
+discipline without creating unnecessary abstractions.
+
+Before introducing an abstraction, ask:
+
+> Does this solve an actual problem in the current application?
+
+If not, don't introduce it.
+
+---
+
+# 2. Architecture
+
+The backend is a modular monolith.
+
+Use a lightweight Clean Architecture / layered architecture.
+
+Recommended structure:
+
+backend/src/main/java/.../
+
+    domain/
+        model/
+        exception/
+
+    application/
+        service/
+        dto/
+
+    infrastructure/
+        persistence/
+        security/
+
+    presentation/
+        controller/
+        dto/
+
+The exact package structure may be simplified when a feature does not
+justify additional layers.
+
+The important dependency direction is:
+
+    presentation
+          ↓
+    application
+          ↓
+       domain
+
+Infrastructure implements technical concerns required by the
+application/domain.
+
+---
+
+# 3. Domain Layer
+
+The domain must not depend on Spring MVC, HTTP, controllers or frontend
+concerns.
+
+Domain objects should contain actual business rules where appropriate.
+
+Core domain:
+
+    User
+    Task
+
+Task status should be represented by an explicit enum rather than
+arbitrary strings.
+
+For example:
+
+    TODO
+    IN_PROGRESS
+    DONE
+
+Do not create a generic "status framework" for three statuses.
+
+---
+
+# 4. Application Layer
+
+Application services coordinate business operations.
+
+Examples:
+
+    RegisterUser
+    AuthenticateUser
+    CreateTask
+    UpdateTask
+    DeleteTask
+    ListTasks
+
+Application services may depend on interfaces/ports when that provides
+real value.
+
+Do not create interfaces solely to satisfy an architectural pattern.
+
+For this project:
+
+    one concrete implementation is often sufficient.
+
+Application services must not:
+
+- contain HTTP-specific logic
+- manipulate Spring MVC responses
+- access frontend state
+- contain SQL
+- depend directly on React/Flutter
+
+---
+
+# 5. Controllers
+
+Controllers are transport adapters.
+
+They are responsible for:
+
+- HTTP request handling
+- authentication context extraction
+- request validation
+- calling application services
+- mapping results to HTTP responses
+
+Controllers must NOT contain business rules.
+
+Avoid:
+
+    @PostMapping(...)
+    // 50 lines of business logic
+
+Prefer:
+
+    validate request
+    → call application service
+    → return response
+
+---
+
+# 6. DTOs
+
+Do not expose JPA entities directly through the REST API.
+
+Use DTOs at the API boundary.
+
+Example:
+
+    RegisterRequest
+    LoginRequest
+    AuthResponse
+
+    CreateTaskRequest
+    UpdateTaskRequest
+    TaskResponse
+
+Request DTOs are responsible for transport-level validation.
+
+Use Jakarta Bean Validation where appropriate:
+
+    @NotBlank
+    @Email
+    @Size
+    etc.
+
+Do not duplicate validation unnecessarily across every layer.
+
+Business invariants belong to the appropriate domain/application layer.
+
+---
+
+# 7. Persistence
+
+Use:
+
+    Spring Data JPA
+    MySQL
+
+Development/tests may use:
+
+    H2
+
+JPA entities belong to the infrastructure/persistence side.
+
+Do not leak repository implementation details into controllers.
+
+Repository access must remain behind the application/domain boundary when
+an abstraction is useful.
+
+Do not create repository interfaces with dozens of speculative methods.
+
+Only implement queries actually required by the application.
+
+---
+
+# 8. User Ownership and Authorization
+
+This is a critical business/security rule.
+
+A user can only access their own tasks.
+
+Every task operation must enforce ownership:
+
+    GET    /api/tasks
+    POST   /api/tasks
+    PUT    /api/tasks/{id}
+    DELETE /api/tasks/{id}
+
+Never trust a user-provided userId to determine ownership.
+
+The authenticated principal/JWT identity is the source of the current user.
+
+Forbidden patterns:
+
+    taskRepository.findById(id)
+    // update/delete without verifying ownership
+
+Prefer queries or service logic that explicitly enforce ownership.
+
+Example conceptual query:
+
+    findByIdAndUserId(taskId, authenticatedUserId)
+
+Do not expose another user's task even when the task ID is known.
+
+---
+
+# 9. Authentication & Security
+
+Authentication uses:
+
+    Spring Security
+    JWT
+    BCrypt password hashing
+
+Passwords must NEVER be stored in plaintext.
+
+Passwords must NEVER appear in:
+
+- logs
+- API responses
+- exceptions
+- test output
+- JWT claims
+
+JWT validation must be performed by Spring Security.
+
+Protected task endpoints require authentication.
+
+Public endpoints:
+
+    POST /api/auth/register
+    POST /api/auth/login
+
+Protected endpoints:
+
+    /api/tasks/**
+
+Do not disable security to make development easier.
+
+Do not use:
+
+    permitAll("/api/**")
+
+as a shortcut.
+
+---
+
+# 10. JWT Storage
+
+The frontend may use a secure authentication strategy appropriate to
+the assessment.
+
+If localStorage is used, document the decision and keep the implementation
+centralized.
+
+Do not scatter token handling across React components.
+
+Authentication concerns should have a single clear owner.
+
+For example:
+
+    auth client
+    API client
+    auth state
+
+The rest of the application should not need to know how the token is
+stored.
+
+---
+
+# 11. REST API Design
+
+The API should remain conventional and predictable.
+
+Required endpoints:
+
+    POST   /api/auth/register
+    POST   /api/auth/login
+
+    GET    /api/tasks
+    POST   /api/tasks
+    PUT    /api/tasks/{id}
+    DELETE /api/tasks/{id}
+
+Use appropriate HTTP status codes.
+
+Examples:
+
+    201 Created
+    200 OK
+    204 No Content
+    400 Bad Request
+    401 Unauthorized
+    403 Forbidden
+    404 Not Found
+    409 Conflict
+    500 Internal Server Error
+
+Do not return 200 for every situation.
+
+---
+
+# 12. API Error Handling
+
+Use a centralized exception handling mechanism.
+
+Prefer:
+
+    @RestControllerAdvice
+
+with a consistent error response.
+
+Example shape:
+
+    {
+      "status": 400,
+      "message": "Validation failed",
+      "timestamp": "...",
+      "path": "/api/tasks"
+    }
+
+Do not expose stack traces or internal implementation details.
+
+Errors should be useful to the frontend without leaking sensitive
+information.
+
+---
+
+# 13. Frontend Architecture
+
+The React application should be organized by feature rather than
+creating a large generic component hierarchy.
+
+Prefer something similar to:
+
+    frontend/src/
+
+        app/
+        components/
+        features/
+            auth/
+            tasks/
+        lib/
+        hooks/
+        types/
+
+Do not create abstractions before there is repetition that justifies them.
+
+A component should have one clear responsibility.
+
+---
+
+# 14. React Principles
+
+Use modern React patterns.
+
+Prefer:
+
+- functional components
+- TypeScript
+- custom hooks where logic is genuinely reusable
+- TanStack Query for server state
+- controlled forms or a lightweight form library where justified
+- explicit loading/error/empty states
+
+Avoid:
+
+- unnecessary global state
+- prop drilling across many levels
+- duplicated API calls
+- manually managed server cache
+- giant components
+- useEffect for logic that belongs in event handlers or query/mutation
+  mechanisms
+
+Do not use React state as a replacement for server-state management.
+
+---
+
+# 15. API Client
+
+Centralize HTTP communication.
+
+Do not write:
+
+    fetch(...)
+    fetch(...)
+    fetch(...)
+    fetch(...)
+
+throughout random components.
+
+Use a small API client responsible for:
+
+- base URL
+- authentication headers
+- JSON serialization
+- common error handling
+
+Feature-specific functions can then call the API client.
+
+Example:
+
+    tasksApi.list()
+    tasksApi.create()
+    tasksApi.update()
+    tasksApi.delete()
+
+Do not create an enormous generic API framework.
+
+---
+
+# 16. TanStack Query
+
+Use TanStack Query for server state.
+
+Queries should handle:
+
+- fetching
+- caching
+- loading
+- errors
+- invalidation
+- refetching
+
+Mutations should invalidate or update the appropriate query cache.
+
+Example conceptual flow:
+
+    createTask()
+        ↓
+    mutation success
+        ↓
+    invalidate tasks query
+        ↓
+    UI reflects server state
+
+Do not manually synchronize the same task data across multiple unrelated
+React states.
+
+---
+
+# 17. UX/UI Principles
+
+The frontend is part of the technical assessment.
+
+Do not build a technically correct application with an unfinished-looking
+interface.
+
+The UI should demonstrate:
+
+- visual hierarchy
+- responsive layout
+- consistent spacing
+- clear typography
+- accessible controls
+- coherent color usage
+- meaningful feedback
+- predictable interactions
+
+Follow the visual direction of the COVA material supplied with the test.
+
+Use the COVA-inspired palette consistently rather than randomly choosing
+colors per component.
+
+Avoid excessive gradients, animations or decorative elements that do not
+improve usability.
+
+---
+
+# 18. Required UI States
+
+Every asynchronous user flow should consider:
+
+    Loading
+    Success
+    Empty
+    Error
+
+Examples:
+
+Task list:
+
+    Loading → skeleton/spinner
+    Empty → useful empty-state message + CTA
+    Error → clear retry action
+    Loaded → task list
+
+Mutation:
+
+    submitting → disabled/loading button
+    success → feedback + updated UI
+    failure → actionable error
+
+Never leave the user wondering whether an operation happened.
+
+---
+
+# 19. Responsive Design
+
+The web application must work on:
+
+    desktop
+    tablet
+    mobile
+
+Do not design desktop first and "fix mobile later".
+
+Use responsive Tailwind utilities and layouts.
+
+Avoid fixed widths that break small screens.
+
+Forms and task cards should remain usable on narrow viewports.
+
+---
+
+# 20. Accessibility
+
+Use semantic HTML where possible.
+
+Examples:
+
+    button → actions
+    a → navigation
+    label → form fields
+    input → data entry
+
+Interactive elements must have understandable labels.
+
+Do not rely on color alone to communicate task status.
+
+Maintain sufficient contrast.
+
+Keyboard navigation should not be unnecessarily blocked.
+
+---
+
+# 21. Performance
+
+Do not prematurely optimize.
+
+For this application:
+
+- avoid unnecessary re-renders
+- avoid unnecessary API calls
+- paginate if the task list requires it
+- use appropriate database indexes
+- keep frontend bundles reasonable
+
+Do NOT introduce:
+
+- Redis
+- Kafka
+- WebSockets
+- microservices
+- event sourcing
+- CQRS
+- service mesh
+
+unless a real requirement appears.
+
+They are not justified by this application's domain.
+
+---
+
+# 22. Testing Strategy
+
+Tests must verify behavior rather than implementation details.
+
+Backend priority:
+
+1. Domain/application unit tests
+2. Repository/integration tests where useful
+3. Controller/API tests for critical flows
+
+Important scenarios:
+
+- registration
+- login
+- invalid credentials
+- task creation
+- task update
+- task deletion
+- task filtering
+- task search
+- unauthenticated access
+- user cannot access another user's task
+
+Frontend priority:
+
+- build
+- lint
+- critical component behavior
+- important user flows where practical
+
+Do not chase arbitrary 100% coverage.
+
+Meaningful tests are more valuable than inflated coverage.
+
+---
+
+# 23. H2 and MySQL
+
+H2 exists for:
+
+    fast development
+    automated tests
+
+MySQL is the deployment database.
+
+Profiles should make the distinction explicit.
+
+Example:
+
+    application.yml
+    application-h2.yml
+    application-mysql.yml
+
+Do not create separate business implementations for H2 and MySQL.
+
+Only persistence configuration should differ.
+
+---
+
+# 24. Database Design
+
+Keep the model intentionally small.
+
+Core entities:
+
+    User
+    Task
+
+Relationship:
+
+    User 1 ──── N Task
+
+Important constraints:
+
+- User email is unique.
+- Task belongs to exactly one user.
+- Task status is constrained by the domain enum.
+- Created/updated timestamps are maintained consistently.
+
+Do not create unnecessary tables.
+
+---
+
+# 25. Docker
+
+Dockerfiles should be production-oriented but simple.
+
+Backend:
+
+- multi-stage build
+- minimal runtime image
+- non-root execution where practical
+- configuration through environment variables
+
+Frontend:
+
+- production build
+- lightweight web server/runtime
+- no development server in the production image
+
+Never bake secrets into Docker images.
+
+---
+
+# 26. Configuration
+
+Configuration must be externalized.
+
+Never commit:
+
+    passwords
+    JWT secrets
+    cloud credentials
+    API keys
+
+Commit:
+
+    .env.example
+
+Do not commit:
+
+    .env
+
+Use environment variables for deployment configuration.
+
+---
+
+# 27. Dependency Discipline
+
+Before adding a dependency ask:
+
+1. Is it required?
+2. Does the existing stack already solve the problem?
+3. Does it reduce complexity rather than increase it?
+4. Is it appropriate for a small assessment project?
+
+Do not add dependencies simply because they are popular.
+
+Every additional dependency increases maintenance and attack surface.
+
+---
+
+# 28. Forbidden Patterns
+
+Do NOT introduce:
+
+- microservices
+- CQRS
+- event sourcing
+- Kafka
+- RabbitMQ
+- Redis
+- distributed transactions
+- service mesh
+- unnecessary design-pattern abstractions
+- generic "BaseService" / "BaseRepository" hierarchies
+- god classes
+- god React components
+- duplicated API clients
+- business logic in controllers
+- business logic in React presentation components
+- direct JPA entities in API responses
+- plaintext passwords
+- hardcoded secrets
+- unchecked task ownership
+- `any` everywhere in TypeScript
+
+Do not solve hypothetical future requirements.
+
+---
+
+# 29. Refactoring Rule
+
+If existing code violates these rules, fix the design before extending it
+when the violation affects correctness, security or maintainability.
+
+Do not continuously stack new code on top of an obviously broken abstraction.
+
+However, avoid large unrelated refactors during feature development.
+
+Refactor proportionally.
+
+---
+
+# 30. Definition of Quality
+
+Before considering implementation complete, verify:
+
+- Architecture is understandable.
+- Business logic is in the appropriate layer.
+- Authentication is secure.
+- Task ownership is enforced.
+- API errors are handled consistently.
+- UI handles loading, empty and error states.
+- Frontend is responsive.
+- No secrets are committed.
+- Tests cover important behavior.
+- Lint/build/tests pass.
+- Documentation matches the implementation.
+
+The final question is:
+
+> Would another senior engineer understand this project quickly without
+> needing to reverse-engineer unnecessary abstractions?
+
+If not, simplify.

@@ -1,13 +1,28 @@
-import { CheckSquare } from 'lucide-react'
+import { CheckSquare, LogOut } from 'lucide-react'
+import { Link, Outlet } from 'react-router-dom'
 
+import { LocaleToggle } from '@/components/LocaleToggle'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useAuth } from '@/features/auth/useAuth'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 export function AppShell() {
+  const { user, logout } = useAuth()
+  const { t } = useTranslation()
+
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="border-b border-border bg-card">
+      <header className="sticky top-0 z-40 border-b border-border bg-card">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <CheckSquare aria-hidden className="size-5" />
             </span>
@@ -19,79 +34,51 @@ export function AppShell() {
                 Task Manager
               </p>
             </div>
-          </div>
+          </Link>
 
-          <nav
-            aria-label="Main"
-            className="flex flex-wrap items-center gap-2 sm:gap-3"
-          >
-            <Button variant="ghost" disabled className="text-muted-foreground">
-              Dashboard
-            </Button>
-            <Button variant="ghost" disabled className="text-muted-foreground">
-              Sign in
-            </Button>
-            <Button variant="cova" disabled>
-              Get started
-            </Button>
+          <nav aria-label="Main" className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <LocaleToggle />
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={user.email}
+                    className="flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {user.email.charAt(0).toUpperCase()}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel className="font-normal">
+                    <p className="truncate text-sm font-medium text-foreground">{user.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('nav.memberSince', { date: new Date(user.createdAt).toLocaleDateString() })}
+                    </p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={logout} variant="destructive">
+                    <LogOut aria-hidden className="size-4" />
+                    {t('nav.logOut')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button asChild variant="ghost">
+                  <Link to="/login">{t('nav.signIn')}</Link>
+                </Button>
+                <Button asChild variant="cova">
+                  <Link to="/register">{t('nav.getStarted')}</Link>
+                </Button>
+              </>
+            )}
           </nav>
         </div>
       </header>
 
       <main className="flex flex-1 flex-col">
-        <section className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
-          <div className="max-w-2xl space-y-6 text-left">
-            <p className="inline-flex rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">
-              Phase 1 — application shell
-            </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Organize your work with clarity
-            </h1>
-            <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-              The COVA Task Manager web experience will live here: secure
-              authentication, personal task lists, search, and status
-              filtering. Backend and frontend foundations are in place; feature
-              work starts next.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="default" disabled>
-                Task dashboard coming next
-              </Button>
-              <Button variant="outline" disabled>
-                View API docs
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-12 grid gap-4 sm:grid-cols-3">
-            {[
-              {
-                title: 'Teal primary',
-                body: 'Navigation, links, and primary actions use COVA teal.',
-              },
-              {
-                title: 'Orange accent',
-                body: 'Highlights and key calls-to-action use warm orange.',
-              },
-              {
-                title: 'Responsive shell',
-                body: 'Layout adapts from mobile to desktop with consistent spacing.',
-              },
-            ].map((item) => (
-              <article
-                key={item.title}
-                className="rounded-xl border border-border bg-muted/40 p-5 text-left"
-              >
-                <h2 className="text-sm font-semibold text-foreground">
-                  {item.title}
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {item.body}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
+        <Outlet />
       </main>
 
       <footer className="border-t border-border bg-cova-neutral-50">

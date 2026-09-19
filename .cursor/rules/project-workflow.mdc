@@ -1,0 +1,676 @@
+---
+description: Development workflow, scope control, Git quality, testing and delivery — COVA Task Manager
+alwaysApply: true
+---
+
+# COVA Task Manager — Project Workflow
+
+The objective is to deliver a complete, polished and maintainable
+full-stack application within the technical assessment scope.
+
+The implementation must prioritize:
+
+1. Backend correctness and security
+2. Frontend UX/UI quality
+3. Testing
+4. Documentation
+5. Docker
+6. CI/CD
+7. Deployment
+8. Flutter mobile only if the core application is complete
+
+Do not sacrifice a complete working web application for optional features.
+
+---
+
+# 1. Source of Truth
+
+The repository documentation is the project's source of truth.
+
+Important files:
+
+    README.md
+
+    docs/architecture.md
+    docs/api.md
+    docs/database.md
+    docs/ux.md
+    docs/decisions.md
+
+Cursor rules:
+
+    .cursor/rules/architecture.mdc
+    .cursor/rules/project-workflow.mdc
+
+When architecture changes materially:
+
+    update docs/architecture.md
+
+When an important technical decision changes:
+
+    update docs/decisions.md
+
+When an API contract changes:
+
+    update docs/api.md
+
+When the UI/design system changes materially:
+
+    update docs/ux.md
+
+Documentation should describe the implementation that actually exists.
+
+---
+
+# 2. Development Order
+
+Follow this order unless there is a concrete reason to change it.
+
+## Phase 1 — Repository foundation
+
+Create:
+
+    backend/
+    frontend/
+    docs/
+    .github/
+
+Configure:
+
+    Git
+    .gitignore
+    environment templates
+    README
+    local development instructions
+
+---
+
+## Phase 2 — Backend foundation
+
+Implement:
+
+    Spring Boot application
+    configuration profiles
+    H2 profile
+    MySQL profile
+    database schema
+    User
+    Task
+    repositories
+
+Verify the application starts before adding authentication.
+
+---
+
+## Phase 3 — Authentication
+
+Implement:
+
+    registration
+    password hashing
+    login
+    JWT generation
+    JWT validation
+    Spring Security configuration
+
+Verify:
+
+    valid login works
+    invalid login fails
+    protected endpoints reject unauthenticated requests
+
+---
+
+## Phase 4 — Task API
+
+Implement:
+
+    GET    /api/tasks
+    POST   /api/tasks
+    PUT    /api/tasks/{id}
+    DELETE /api/tasks/{id}
+
+Then implement:
+
+    status filtering
+    search
+
+Every operation must enforce authenticated-user ownership.
+
+---
+
+## Phase 5 — Backend quality
+
+Before moving deeply into frontend work:
+
+    run tests
+    verify validation
+    verify security
+    verify ownership
+    verify API error handling
+    verify H2 profile
+    verify MySQL profile
+
+The backend should provide a stable contract for the frontend.
+
+---
+
+# 3. Frontend Development Order
+
+Build the frontend in this order:
+
+1. Application shell
+2. Design tokens/theme
+3. Authentication pages
+4. API client
+5. Authentication state
+6. Task dashboard
+7. Task creation/editing
+8. Delete confirmation
+9. Search
+10. Status filtering
+11. Loading states
+12. Empty states
+13. Error states
+14. Responsive behavior
+15. UX polish
+
+Do not polish isolated screens while core flows are still broken.
+
+---
+
+# 4. Feature Development Loop
+
+For every feature:
+
+    Understand
+        ↓
+    Design
+        ↓
+    Implement
+        ↓
+    Test
+        ↓
+    Verify
+        ↓
+    Document if necessary
+        ↓
+    Commit
+
+Before writing code, identify:
+
+- affected layer
+- affected API
+- data model impact
+- security implications
+- frontend impact
+
+Do not start by generating large amounts of code.
+
+---
+
+# 5. Vertical Slices
+
+Prefer completing features end-to-end.
+
+Example:
+
+    Create Task
+
+    API
+      ↓
+    Service
+      ↓
+    Repository
+      ↓
+    Test
+      ↓
+    API verification
+      ↓
+    React mutation
+      ↓
+    UI
+      ↓
+    Loading/success/error state
+
+A working vertical slice is preferable to partially implementing every
+layer simultaneously.
+
+---
+
+# 6. Git Workflow
+
+Use Git continuously.
+
+Recommended branches:
+
+    main
+    feature/<short-description>
+
+Examples:
+
+    feature/authentication
+    feature/task-crud
+    feature/task-filters
+    feature/dashboard-ui
+    feature/docker
+    feature/ci-cd
+
+Do not make unrelated changes in a feature branch.
+
+---
+
+# 7. Commit Convention
+
+Use Conventional Commits.
+
+Examples:
+
+    feat(auth): implement JWT authentication
+    feat(tasks): add task CRUD API
+    feat(tasks): add search and status filtering
+    feat(web): implement task dashboard
+    fix(tasks): enforce task ownership
+    test(auth): add authentication integration tests
+    test(tasks): cover task ownership
+    docs: document API architecture
+    ci: add backend and frontend pipeline
+    chore: configure Docker deployment
+
+Commits should represent meaningful, atomic changes.
+
+Avoid:
+
+    update
+    changes
+    stuff
+    final
+    final-final
+    test123
+
+---
+
+# 8. Commit Gate
+
+Before committing:
+
+    git diff
+    git status
+
+Then verify affected code.
+
+Backend:
+
+    ./mvnw test
+
+Frontend:
+
+    npm run lint
+    npm run build
+
+Run the appropriate checks for the change.
+
+Never knowingly commit broken tests or a broken build.
+
+---
+
+# 9. Scope Control
+
+The assessment requirements are the priority.
+
+Core scope:
+
+    authentication
+    task CRUD
+    task listing
+    search
+    status filtering
+    responsive web UI
+    API persistence
+    tests
+    documentation
+
+Bonus:
+
+    Docker
+    CI/CD
+    GCP deployment
+    Flutter
+
+Do not start optional work until the core web application is stable.
+
+---
+
+# 10. Time Management
+
+When time becomes constrained, prioritize:
+
+    1. Backend correctness
+    2. Authentication/security
+    3. Complete React application
+    4. Responsive UX
+    5. Tests
+    6. README/documentation
+    7. Docker
+    8. CI/CD
+    9. GCP deployment
+    10. Flutter
+
+Do not spend significant time implementing optional infrastructure while
+the primary user journey is incomplete.
+
+---
+
+# 11. Definition of Done
+
+A feature is done when:
+
+- implementation works
+- validation exists where necessary
+- authorization is correct
+- important failure cases are handled
+- tests pass
+- frontend states are handled where applicable
+- lint/build passes
+- documentation is updated when the change affects documented behavior
+
+"Endpoint responds" is not sufficient.
+
+"Screen renders" is not sufficient.
+
+The complete user flow must work.
+
+---
+
+# 12. Testing Workflow
+
+After backend changes:
+
+    ./mvnw test
+
+After frontend changes:
+
+    npm run lint
+    npm run build
+
+For important user flows, manually verify:
+
+    register
+    login
+    create task
+    edit task
+    filter task
+    search task
+    delete task
+    logout/login again
+    verify tasks remain associated with the user
+
+Security verification:
+
+    unauthenticated → /api/tasks → rejected
+
+    User A → User B task → rejected/not exposed
+
+---
+
+# 13. API Contract Discipline
+
+When changing an API:
+
+1. Update backend implementation
+2. Update tests
+3. Update `docs/api.md`
+4. Update frontend API client
+5. Verify the complete flow
+
+Do not silently change:
+
+    request fields
+    response fields
+    status codes
+    endpoint paths
+
+without updating the consumers and documentation.
+
+---
+
+# 14. Database Changes
+
+When changing the data model:
+
+1. Update entity/model
+2. Update persistence configuration
+3. Update tests
+4. Update `docs/database.md`
+5. Verify H2
+6. Verify MySQL
+
+Avoid destructive schema changes unless required.
+
+Do not add database tables for hypothetical future features.
+
+---
+
+# 15. UI Changes
+
+When implementing UI:
+
+1. Follow `docs/ux.md`
+2. Reuse existing design tokens/components
+3. Keep spacing and typography consistent
+4. Handle loading/empty/error states
+5. Test responsive behavior
+6. Verify keyboard/accessibility basics
+
+Do not introduce a second visual language inside the application.
+
+---
+
+# 16. AI-Assisted Development
+
+AI may be used to accelerate implementation, but generated code must
+follow the same engineering standards as manually written code.
+
+Workflow:
+
+    inspect
+      ↓
+    plan
+      ↓
+    implement small change
+      ↓
+    review generated code
+      ↓
+    test
+      ↓
+    simplify
+      ↓
+    commit
+
+Never blindly accept generated architecture.
+
+Before accepting generated code ask:
+
+- Is this necessary?
+- Is there already an existing solution?
+- Is this abstraction justified?
+- Does it respect the architecture?
+- Does it introduce unnecessary dependencies?
+- Is it secure?
+- Can another engineer understand it quickly?
+
+---
+
+# 17. Documentation Workflow
+
+Keep documentation lightweight.
+
+Update documentation only when it adds durable value.
+
+Required documentation:
+
+    README.md
+    docs/architecture.md
+    docs/api.md
+    docs/database.md
+    docs/ux.md
+    docs/decisions.md
+
+Do not create a new document for every small implementation detail.
+
+Prefer updating an existing document.
+
+---
+
+# 18. Docker Workflow
+
+Before creating production Docker images:
+
+    backend tests pass
+    frontend build passes
+
+Then verify:
+
+    docker build ./backend
+    docker build ./frontend
+
+Never bake secrets into images.
+
+Use environment variables for runtime configuration.
+
+---
+
+# 19. CI/CD Workflow
+
+CI should verify the same fundamentals used locally.
+
+Minimum CI:
+
+    Backend
+      - compile
+      - test
+
+    Frontend
+      - install
+      - lint
+      - build
+
+Docker image builds should only be introduced after application builds
+are stable.
+
+Deployment should never bypass the test/build gates.
+
+---
+
+# 20. Deployment Verification
+
+Before considering GCP deployment complete:
+
+- application starts
+- frontend can reach backend
+- authentication works
+- task CRUD works
+- database connection works
+- environment variables are configured
+- secrets are not committed
+- production CORS is restricted appropriately
+- health/status endpoints behave as expected
+
+Test the deployed application through the real user flow.
+
+---
+
+# 21. Flutter Workflow
+
+Flutter is optional.
+
+Do NOT start Flutter while the web application is incomplete.
+
+If the core application is complete and time remains:
+
+1. Create Flutter project
+2. Implement API client
+3. Implement authentication
+4. Implement task list
+5. Implement task creation
+6. Add basic edit/delete if time permits
+7. Verify JWT compatibility
+8. Document the mobile client
+
+Reuse the existing backend API.
+
+Do not create a second backend for mobile.
+
+---
+
+# 22. Final Submission Gate
+
+Before submission:
+
+## Backend
+
+- tests pass
+- authentication works
+- task ownership is enforced
+- API behaves correctly
+- MySQL works
+
+## Frontend
+
+- registration works
+- login works
+- task CRUD works
+- search works
+- filtering works
+- responsive layout works
+- loading/error/empty states work
+- lint passes
+- production build passes
+
+## Repository
+
+- no secrets
+- no unnecessary files
+- README is accurate
+- documentation is accurate
+- Git history is understandable
+
+## DevOps
+
+If implemented:
+
+- Docker builds
+- CI passes
+- deployment works
+
+## Optional
+
+If implemented:
+
+- Flutter builds
+- Flutter consumes the same API
+
+---
+
+# 23. Final Quality Check
+
+Before submission, ask:
+
+> Can the examiner clone this repository and understand how to run it
+> within a few minutes?
+
+> Can the examiner understand the architecture without reading the
+> entire source code?
+
+> Can the examiner see clear evidence of security, testing and
+> separation of concerns?
+
+> Does the UI look like a deliberately designed product rather than
+> a collection of technical test screens?
+
+> Is the implementation simple enough that its complexity can be
+> explained in a short technical discussion?
+
+If the answer is no, improve the highest-impact issue first.
+
+Do not add complexity simply to make the project appear more advanced.
