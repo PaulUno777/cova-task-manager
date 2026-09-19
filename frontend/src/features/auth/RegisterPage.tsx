@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -12,13 +12,15 @@ import { useTranslation } from '@/lib/i18n/useTranslation'
 import { useAuth } from './useAuth'
 
 export function RegisterPage() {
-  const { register } = useAuth()
+  const { user, register } = useAuth()
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
+
+  if (user) return <Navigate to="/" replace />
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()

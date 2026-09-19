@@ -38,13 +38,13 @@ rejects a refresh token used as a bearer token and vice versa, which is enough t
 two token types from being swapped, without adding persistence for a threat model
 (server-side logout, token theft response) this project doesn't need.
 
-## TanStack Query (planned)
+## TanStack Query
 
-**Decision:** Server state (tasks, auth session metadata) via TanStack Query on the frontend.
+**Decision:** Server state (tasks) via TanStack Query on the frontend.
 
 **Why:** Caching, loading/error states, and mutation invalidation without duplicating server data in React state.
 
-**Status:** Not installed until the API client and task features begin.
+**Status:** Implemented — `useTasksQuery`/`useCreateTask`/`useUpdateTask`/`useDeleteTask` in `features/tasks/useTasks.ts` drive the whole dashboard; mutations invalidate the `tasks` query key on success.
 
 ## Tailwind CSS + shadcn/ui
 
@@ -52,7 +52,27 @@ two token types from being swapped, without adding persistence for a threat mode
 
 **Why:** Assessment allows Tailwind or shadcn; combining both gives speed and consistent components.
 
-**Status:** Phase 1 shell uses Button and design tokens; more components added as screens ship.
+**Status:** Implemented across the app (button, card, dialog, dropdown-menu, select, input, label, textarea, badge, skeleton, alert).
+
+## Hand-rolled i18n (no i18next)
+
+**Decision:** A small context + dictionary (`lib/i18n/`) for EN/FR, not a library like i18next.
+
+**Why:** Two languages and a bounded string set don't justify a dependency with namespaces,
+lazy-loading, and interpolation plugins the app doesn't need — a `useTranslation()` hook backed
+by two plain objects covers it in ~80 lines, with the same call-site ergonomics.
+
+## Kanban board with drag-and-drop (@dnd-kit)
+
+**Decision:** Tasks are grouped into three status columns (To do / In progress / Done) with
+drag-and-drop to change status, using `@dnd-kit/core`. The status filter dropdown collapses
+the board to a single column rather than duplicating the grouping.
+
+**Why:** For a task manager, grouping by status is the natural view — a flat filtered list is
+strictly less useful once the data model already has three statuses. `@dnd-kit` was chosen
+over `react-beautiful-dnd` (unmaintained) for being actively maintained and accessible
+(keyboard sensor support); the edit dialog's status field remains the fully keyboard-accessible
+way to change status without dragging.
 
 ## pnpm for frontend
 
@@ -62,14 +82,57 @@ two token types from being swapped, without adding persistence for a threat mode
 
 ## Docker
 
-**Decision:** Separate Dockerfiles for backend and frontend; Compose provides MySQL locally.
+**Decision:** Separate multi-stage Dockerfiles for backend and frontend (frontend built with
+Vite, served by nginx with an SPA fallback); Compose orchestrates MySQL + backend + frontend
+together for local verification.
 
-**Why:** Reproducible builds for CI/CD and GCP later; Compose optional for DB only in early phases.
+**Why:** Reproducible builds independent of any one deployment target; verifying the full
+stack locally (`docker compose up --build`) before touching any cloud platform catches
+integration bugs (e.g. missing nginx SPA fallback, CORS) for free.
 
-**Status:** Images build individually; full orchestrated stack is a later step.
+**Status:** Both images build and run correctly individually and orchestrated together —
+verified with real container runs, not just a successful build.
 
-## GCP and Flutter (optional)
+## Deployment: Render + Vercel + Aiven, not GCP
 
-**Decision:** Deliver core web + backend first; GCP deployment and Flutter only after the main user journey works.
+**Decision:** Backend on **Render** (free web service, deploys from `backend/Dockerfile`),
+frontend on **Vercel** (free static hosting, zero-config Vite detection), database on
+**Aiven** (free-tier managed MySQL) — reusing the existing `mysql` Spring profile unchanged,
+just pointed at Aiven's connection string via `DB_URL`/`DB_USERNAME`/`DB_PASSWORD`.
 
-**Why:** Assessment marks CI/CD, GCP, and mobile as bonus; quality of the primary app matters most.
+**Why:** The original plan was Google Cloud Run (a GCP-specific GitHub Actions workflow was
+built and locally validated — Docker images built, ran, and passed real API calls). It was
+dropped only because there was no GCP free-tier access available at decision time, not for a
+technical reason. Render + Vercel + Aiven needed zero credit card, connect to GitHub natively
+(no custom CI/CD workflow required — simpler than the GCP path, not just cheaper), and — unlike
+the originally-planned GCP path, which was going to run H2 in-memory for time reasons — actually
+deploy with real MySQL (Aiven), which is a strictly better outcome.
+
+**Tradeoff accepted:** Render's free tier sleeps after 15 minutes idle; the first request after
+that takes ~30–50s to wake the instance. Documented in `docs/deployment.md` rather than hidden.
+
+**Flutter:** still optional, not started — the checklist's own rule ("don't start Flutter
+before the deployed web version works") is now satisfied, so it's the one remaining bonus item
+if time allows.
+
+## Token storage: localStorage, not httpOnly cookies
+
+**Decision:** Access and refresh tokens are kept in `localStorage` (`lib/auth-storage.ts`,
+single owner) and sent as an `Authorization: Bearer` header, not issued as httpOnly cookies.
+
+**Why:** The assessment brief explicitly permits either. httpOnly cookies would close one gap
+(JS can't read the token, so XSS can't directly exfiltrate it) but open another: cookies
+auto-attach to requests, so cross-site request forgery becomes the thing to defend against
+instead (`SameSite`/CSRF-token mitigation). The frontend and backend are on different origins
+(Vercel/Render), which is exactly the case where cross-site cookies are fussiest —
+`SameSite=None; Secure` plus exact-origin `Access-Control-Allow-Credentials` on every request,
+versus the current setup's plain CORS allow-list. It would also mean reworking the api-client
+(no more manually attaching a header; the browser does it) and issuing/clearing cookies on
+login/refresh/logout instead of returning tokens in the JSON body — a cross-cutting change to
+an already-implemented, tested, and deployed flow, not a drop-in swap.
+
+**Where this would matter in production:** if the app needed to defend specifically against
+XSS-based token theft (e.g. it rendered untrusted user content), httpOnly cookies would be the
+right call despite the added CSRF-handling cost. For this app's actual attack surface — no
+user-generated HTML rendering, task titles/descriptions are shown as plain text/escaped by
+React — the marginal security gain doesn't currently justify the added complexity.

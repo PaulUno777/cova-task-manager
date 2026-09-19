@@ -76,6 +76,9 @@ const en = {
   'task.detail.updatedAt': 'Updated {date}',
   'filters.searchPlaceholder': 'Search tasks… (2+ characters)',
   'filters.allStatuses': 'All statuses',
+  'pwa.installTitle': 'Install COVA Task Manager',
+  'pwa.installBody': 'Add it to your home screen for quick, full-screen access.',
+  'pwa.install': 'Install',
 } as const
 
 const fr: Record<TranslationKey, string> = {
@@ -152,6 +155,9 @@ const fr: Record<TranslationKey, string> = {
   'task.detail.updatedAt': 'Mise à jour le {date}',
   'filters.searchPlaceholder': 'Rechercher des tâches… (2+ caractères)',
   'filters.allStatuses': 'Tous les statuts',
+  'pwa.installTitle': 'Installer COVA Task Manager',
+  'pwa.installBody': "Ajoutez-la à votre écran d'accueil pour un accès rapide en plein écran.",
+  'pwa.install': 'Installer',
 }
 
 export const translations: Record<Locale, Record<TranslationKey, string>> = { en, fr }

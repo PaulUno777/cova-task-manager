@@ -18,9 +18,9 @@ Create a new user.
 
 **Request body:**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| email | string | valid email, unique |
+| Field    | Type   | Rules                                       |
+| -------- | ------ | ------------------------------------------- |
+| email    | string | valid email, unique                         |
 | password | string | minimum length, never returned in responses |
 
 **Responses:** `201 Created` with an [OAuth2-style token response](#token-response); `400` validation; `409` email already exists.
@@ -39,7 +39,7 @@ Exchange a valid, unexpired refresh token for a new access/refresh pair.
 
 **Request body:** `{ "refresh_token": "<refresh token>" }`.
 
-**Responses:** `200 OK` with an [OAuth2-style token response](#token-response); `401` if the token is missing, expired, or is actually an access token (access tokens are rejected here, and refresh tokens are rejected by every other endpoint — see [Using tokens](#using-tokens)).
+**Responses:** `200 OK` with an [OAuth2-style token response](#token-response); `401` if the token is missing, expired, or is actually an access token (access tokens are rejected here, and refresh tokens are rejected by every other endpoint see [Using tokens](#using-tokens)).
 
 ### `GET /api/auth/me` — protected
 
@@ -59,12 +59,12 @@ List tasks for the current user.
 
 **Query parameters:**
 
-| Parameter | Description |
-| --- | --- |
-| status | `TODO`, `IN_PROGRESS`, `DONE` |
-| search | substring match on title/description |
-| page | zero-based page index |
-| size | page size |
+| Parameter | Description                          |
+| --------- | ------------------------------------ |
+| status    | `TODO`, `IN_PROGRESS`, `DONE`        |
+| search    | substring match on title/description |
+| page      | zero-based page index                |
+| size      | page size                            |
 
 **Response:** `200` with `{ content, page, size, totalElements, totalPages }`.
 
@@ -118,7 +118,11 @@ response (RFC 6749 §5.1):
   "refresh_token": "<long-lived JWT, 7 days>",
   "token_type": "Bearer",
   "expires_in": 900,
-  "user": { "id": 1, "email": "person@example.com", "createdAt": "2026-09-18T12:00:00Z" }
+  "user": {
+    "id": 1,
+    "email": "person@example.com",
+    "createdAt": "2026-09-18T12:00:00Z"
+  }
 }
 ```
 
@@ -130,13 +134,9 @@ Send the **access token** in every protected request:
 Authorization: Bearer <access_token>
 ```
 
-When the access token expires, call `POST /api/auth/refresh` with the **refresh token**
-to get a new pair — the user stays signed in without re-entering credentials.
+When the access token expires, call `POST /api/auth/refresh` with the **refresh token** to get a new pair the user stays signed in without re-entering credentials.
 
 The two token types are not interchangeable: the access token carries no `type` claim,
-the refresh token carries `"type": "refresh"`. `/api/auth/refresh` rejects anything that
-isn't a refresh token, and every other endpoint's JWT filter rejects anything that is one
-— so a leaked refresh token can't be replayed directly against the API, and a leaked
-access token can't be used to mint new tokens.
+the refresh token carries `"type": "refresh"`. `/api/auth/refresh` rejects anything that isn't a refresh token, and every other endpoint's JWT filter rejects anything that is one so a leaked refresh token can't be replayed directly against the API, and a leaked access token can't be used to mint new tokens.
 
 The frontend should use `GET /api/auth/me` as the source for the connected user displayed in the application shell.

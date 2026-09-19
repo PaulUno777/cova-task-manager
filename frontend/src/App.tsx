@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router-dom'
 import { Toaster } from 'sonner'
 
+import { InstallPwaBanner } from '@/components/InstallPwaBanner'
 import { AuthProvider } from '@/features/auth/AuthContext'
 import { I18nProvider } from '@/lib/i18n/I18nProvider'
 import { queryClient } from '@/lib/query-client'
@@ -15,6 +16,7 @@ function App() {
         <AuthProvider>
           <RouterProvider router={router} />
           <Toaster richColors position="top-right" />
+          <InstallPwaBanner />
         </AuthProvider>
       </QueryClientProvider>
     </I18nProvider>
