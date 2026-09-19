@@ -114,3 +114,25 @@ that takes ~30–50s to wake the instance. Documented in `docs/deployment.md` ra
 **Flutter:** still optional, not started — the checklist's own rule ("don't start Flutter
 before the deployed web version works") is now satisfied, so it's the one remaining bonus item
 if time allows.
+
+## Token storage: localStorage, not httpOnly cookies
+
+**Decision:** Access and refresh tokens are kept in `localStorage` (`lib/auth-storage.ts`,
+single owner) and sent as an `Authorization: Bearer` header, not issued as httpOnly cookies.
+
+**Why:** The assessment brief explicitly permits either. httpOnly cookies would close one gap
+(JS can't read the token, so XSS can't directly exfiltrate it) but open another: cookies
+auto-attach to requests, so cross-site request forgery becomes the thing to defend against
+instead (`SameSite`/CSRF-token mitigation). The frontend and backend are on different origins
+(Vercel/Render), which is exactly the case where cross-site cookies are fussiest —
+`SameSite=None; Secure` plus exact-origin `Access-Control-Allow-Credentials` on every request,
+versus the current setup's plain CORS allow-list. It would also mean reworking the api-client
+(no more manually attaching a header; the browser does it) and issuing/clearing cookies on
+login/refresh/logout instead of returning tokens in the JSON body — a cross-cutting change to
+an already-implemented, tested, and deployed flow, not a drop-in swap.
+
+**Where this would matter in production:** if the app needed to defend specifically against
+XSS-based token theft (e.g. it rendered untrusted user content), httpOnly cookies would be the
+right call despite the added CSRF-handling cost. For this app's actual attack surface — no
+user-generated HTML rendering, task titles/descriptions are shown as plain text/escaped by
+React — the marginal security gain doesn't currently justify the added complexity.
