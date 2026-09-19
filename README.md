@@ -224,22 +224,23 @@ Both jobs must pass before a PR is mergeable.
 
 ## Deployment
 
-**Status:** not yet deployed — this is bonus scope per the assessment brief, planned after
-the web application (frontend included) is feature-complete.
+Automated via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) on every push
+to `main`: builds both Docker images, pushes to Artifact Registry, deploys both to
+**Google Cloud Run** (public, scales to zero), then points the backend's CORS at the
+frontend's URL. One-time GCP setup (service account + secrets) is documented in
+[`docs/deployment.md`](docs/deployment.md).
 
-Planned approach:
+Try it locally first with the real multi-stage images:
 
-1. Multi-stage Dockerfiles for `backend/` (already present) and `frontend/` once its build
-   is stable.
-2. Deploy both as separate services to **Google Cloud Run** (stateless, scales to zero,
-   matches the "small assessment app" scope better than a persistent VM).
-3. **Cloud SQL for MySQL** as the managed database, reusing the `mysql` Spring profile —
-   only `DB_URL`/`DB_USERNAME`/`DB_PASSWORD`/`JWT_SECRET` change between local Docker
-   Compose and Cloud SQL, no code changes.
-4. Extend `.github/workflows/ci.yml` with a `deploy` job (build + push images, `gcloud run deploy`)
-   gated on the existing test/lint/build jobs, so nothing broken ever reaches Cloud Run.
-5. Secrets (JWT secret, DB credentials) via Cloud Run environment variables / Secret
-   Manager — never baked into the image, consistent with `.env` never being committed.
+```bash
+docker compose up --build
+```
+
+**Known tradeoff:** the deployed backend runs the `h2` (in-memory) profile, not `mysql` —
+provisioning Cloud SQL didn't fit the deployment window. MySQL support is fully implemented
+and verified locally (see [`docs/database.md`](docs/database.md)); see
+[`docs/deployment.md`](docs/deployment.md#known-tradeoff-in-memory-database) for what
+switching the live deployment to it would take.
 
 ---
 
@@ -251,3 +252,4 @@ Planned approach:
 | [docs/api.md](docs/api.md) | Full REST contract, request/response shapes |
 | [docs/database.md](docs/database.md) | Entities, profiles, constraints |
 | [docs/decisions.md](docs/decisions.md) | Why each significant technical choice was made |
+| [docs/deployment.md](docs/deployment.md) | GCP Cloud Run setup, secrets, known tradeoffs |
