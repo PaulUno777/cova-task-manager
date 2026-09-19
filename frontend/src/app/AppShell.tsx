@@ -21,22 +21,22 @@ export function AppShell() {
   return (
     <div className="flex min-h-svh flex-col">
       <header className="sticky top-0 z-40 border-b border-border bg-card">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 sm:gap-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <CheckSquare aria-hidden className="size-5" />
             </span>
             <div className="text-left">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <p className="hidden text-xs font-medium uppercase tracking-wide text-muted-foreground sm:block">
                 COVA
               </p>
-              <p className="text-lg font-semibold leading-tight text-foreground">
+              <p className="text-base font-semibold leading-tight text-foreground sm:text-lg">
                 Task Manager
               </p>
             </div>
           </Link>
 
-          <nav aria-label="Main" className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <nav aria-label="Main" className="flex flex-wrap items-center gap-1.5 sm:gap-3">
             <LocaleToggle />
             {user ? (
               <DropdownMenu>
@@ -65,10 +65,10 @@ export function AppShell() {
               </DropdownMenu>
             ) : (
               <>
-                <Button asChild variant="ghost">
+                <Button asChild variant="ghost" size="sm" className="sm:h-10 sm:px-4 sm:text-base">
                   <Link to="/login">{t('nav.signIn')}</Link>
                 </Button>
-                <Button asChild variant="cova">
+                <Button asChild variant="cova" size="sm" className="hidden sm:inline-flex sm:h-10 sm:px-4 sm:text-base">
                   <Link to="/register">{t('nav.getStarted')}</Link>
                 </Button>
               </>
