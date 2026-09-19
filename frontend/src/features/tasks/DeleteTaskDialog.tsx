@@ -17,15 +17,13 @@ export function DeleteTaskDialog({ task, onOpenChange }: DeleteTaskDialogProps) 
   const { t } = useTranslation()
   const deleteTask = useDeleteTask()
 
-  async function handleConfirm() {
+  function handleConfirm() {
     if (!task) return
-    try {
-      await deleteTask.mutateAsync(task.id)
-      toast.success(t('task.deletedToast'))
-      onOpenChange(false)
-    } catch (error) {
-      toast.error(error instanceof ApiRequestError ? error.message : t('common.error'))
-    }
+    deleteTask.mutate(task.id, {
+      onSuccess: () => toast.success(t('task.deletedToast')),
+      onError: (error) => toast.error(error instanceof ApiRequestError ? error.message : t('common.error')),
+    })
+    onOpenChange(false)
   }
 
   return (
@@ -39,7 +37,7 @@ export function DeleteTaskDialog({ task, onOpenChange }: DeleteTaskDialogProps) 
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}
           </Button>
-          <Button variant="destructive" onClick={handleConfirm} disabled={deleteTask.isPending}>
+          <Button variant="destructive" onClick={handleConfirm}>
             {t('task.delete.confirm')}
           </Button>
         </DialogFooter>

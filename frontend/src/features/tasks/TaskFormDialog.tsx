@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react'
+import { Loader2 } from 'lucide-react'
+import { useState, type SubmitEvent } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -46,7 +47,7 @@ export function TaskFormDialog({ open, onOpenChange, task }: TaskFormDialogProps
 
   const submitting = createTask.isPending || updateTask.isPending
 
-  async function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: SubmitEvent) {
     event.preventDefault()
     setFieldErrors({})
     try {
@@ -116,6 +117,7 @@ export function TaskFormDialog({ open, onOpenChange, task }: TaskFormDialogProps
           </div>
           <DialogFooter>
             <Button type="submit" variant="cova" disabled={submitting}>
+              {submitting && <Loader2 aria-hidden className="size-4 animate-spin" />}
               {submitting
                 ? isEditing
                   ? t('task.form.saving')
