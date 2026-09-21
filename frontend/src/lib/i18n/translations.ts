@@ -21,7 +21,7 @@ const en = {
     'Live OpenAPI/Swagger docs, a fully bilingual EN/FR interface, and a documented REST contract for every endpoint.',
   'hero.feature.workflow.title': 'A real workflow',
   'hero.feature.workflow.body':
-    'Search, status filters, and pagination on top of full task CRUD — not just a list and a form.',
+    'Search, status filters, and pagination on top of full task CRUD not just a list and a form.',
   'auth.signIn.title': 'Sign in',
   'auth.signIn.description': 'Welcome back. Enter your credentials to continue.',
   'auth.signIn.submit': 'Sign in',
@@ -100,7 +100,7 @@ const fr: Record<TranslationKey, string> = {
     "Documentation OpenAPI/Swagger en direct, interface entièrement bilingue EN/FR, et contrat REST documenté pour chaque endpoint.",
   'hero.feature.workflow.title': 'Un vrai flux de travail',
   'hero.feature.workflow.body':
-    'Recherche, filtres par statut et pagination en plus du CRUD complet des tâches — pas seulement une liste et un formulaire.',
+    'Recherche, filtres par statut et pagination en plus du CRUD complet des tâches pas seulement une liste et un formulaire.',
   'auth.signIn.title': 'Se connecter',
   'auth.signIn.description': 'Content de vous revoir. Entrez vos identifiants pour continuer.',
   'auth.signIn.submit': 'Se connecter',
