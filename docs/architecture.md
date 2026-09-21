@@ -17,6 +17,7 @@ The domain is small; the design avoids microservices, message buses, or extra in
 - Task queries always scope by authenticated user id. Update and delete query by both task id and owner id a request for another user's task returns `404`, never `403`, so existence
   isn't leaked.
 - Frontend is a fully implemented React app: JWT auth (login/register/logout, silent refresh), a Kanban task board (drag-and-drop status changes, click-to-view detail, create/edit/delete, search + status filter), EN/FR i18n, and PWA installability not just a themed shell.
+- Mobile is a fully implemented Flutter app (`mobile/`): the same JWT auth (register/login/logout, silent refresh-on-401 sharing one in-flight refresh call across concurrent requests) against the same endpoints, a filtered/searchable task list (not a Kanban board — a simple list matches the mobile form factor and the assessment's own suggested widgets better), and create/edit/delete. State via `provider` `ChangeNotifier`s, networking via `dio`, tokens in platform secure storage. See `[mobile/README.md](../mobile/README.md)`.
 
 ## Package structure (backend)
 
@@ -40,7 +41,7 @@ This is the actual current layout under `com.pauluno.task_manager` not a future 
 flowchart TB
   User[User]
   Web[React Web App]
-  Mobile[Flutter App optional]
+  Mobile[Flutter App]
   API[Spring Boot API]
   Sec[Spring Security JWT]
   JPA[Spring Data JPA]
@@ -59,12 +60,11 @@ flowchart TB
 
 ## Clients
 
-| Client                    | Status                                              |
-| ------------------------- | --------------------------------------------------- |
-| React + Vite + TypeScript | Fully implemented auth, Kanban dashboard, i18n, PWA |
-| Flutter                   | Optional; not started                               |
+| Client                    | Status                                                      |
+| ------------------------- | ------------------------------------------------------------ |
+| React + Vite + TypeScript | Fully implemented auth, Kanban dashboard, i18n, PWA          |
+| Flutter                   | Fully implemented auth, filtered/searchable task list + CRUD |
 
 ## Not built yet
 
-- Flutter mobile client (optional bonus scope; the checklist's own rule is not to start it before the deployed web version works that condition is now satisfied)
 - Cloud SQL/managed-MySQL wiring for a GCP deployment specifically (Render + Vercel + Aiven is what's actually deployed see `[docs/deployment.md](deployment.md)`)

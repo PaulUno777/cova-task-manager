@@ -2,7 +2,7 @@
 
 **A modern full-stack task management application built for the COVA Full-Stack Developer technical assessment.**
 
-![CI](https://github.com/PaulUno777/cova-task-manager/actions/workflows/ci.yml/badge.svg)![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?logo=springboot&logoColor=white)![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![CI](https://github.com/PaulUno777/cova-task-manager/actions/workflows/ci.yml/badge.svg)![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?logo=springboot&logoColor=white)![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)![Flutter](https://img.shields.io/badge/Flutter-02569B?logo=flutter&logoColor=white)![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 
 **🔗 Live app:** [https://cova-task-manager-five.vercel.app](https://cova-task-manager-five.vercel.app) · **API/Swagger:** [https://cova-task-manager-8dun.onrender.com/swagger-ui.html](https://cova-task-manager-8dun.onrender.com/swagger-ui.html) _(Backend is on Render's free tier the first request after idling can take ~30–50s to wake up.)_
 
@@ -20,8 +20,9 @@ The application allows authenticated users to create, manage,
 search and filter their personal tasks through a modern web
 interface.
 
-The backend exposes a REST API designed to be consumed by both
-the React web application and the optional Flutter mobile client.
+The backend exposes a REST API consumed by both the React web
+application and a Flutter mobile client — same JWT auth, same
+`/api/tasks` endpoints.
 
 The implementation focuses on:
 
@@ -53,6 +54,14 @@ The implementation focuses on:
 - Click a task to view full details (description, created/updated timestamps)
 - Filter by status, debounced search (2+ characters)
 
+### Mobile (Flutter)
+
+- Register / login / logout with the same JWT (access + refresh) as the web app, tokens in
+  platform secure storage (Keychain / Keystore)
+- Task list with debounced search, status filter, pull-to-refresh, swipe-to-delete
+- Create / edit task form
+- See [mobile/README.md](mobile/README.md)
+
 ### UX
 
 - Responsive interface (mobile-verified)
@@ -73,6 +82,7 @@ The implementation focuses on:
 - H2 development/test profile
 - React + Vite + TypeScript
 - TanStack Query
+- Flutter + Dart, Provider, dio
 - Docker
 - GitHub Actions
 - Deployed on Render + Vercel + Aiven MySQL
@@ -95,7 +105,6 @@ unnecessary distributed systems and infrastructure.
                     │                     │
                     ▼                     ▼
              React Web App        Flutter Mobile
-                                     (optional)
                     │                     │
                     └──────────┬──────────┘
                                │
@@ -163,6 +172,19 @@ Defaults to `VITE_API_URL=http://localhost:8080/api` (backend running locally). 
 [frontend/.env.example](frontend/.env.example) to `frontend/.env` to point it elsewhere (e.g.
 the deployed backend).
 
+### Mobile (Flutter)
+
+Requires the [Flutter SDK](https://docs.flutter.dev/get-started/install) (stable channel).
+
+```bash
+cd mobile
+flutter pub get
+flutter run --dart-define=API_BASE_URL=http://localhost:8080/api
+```
+
+Android emulators can't reach `localhost` — use `http://10.0.2.2:8080/api` instead. Full
+details (per-target base URLs, structure, checks) in [mobile/README.md](mobile/README.md).
+
 ---
 
 ## API
@@ -210,6 +232,11 @@ tests yet — a deliberate scope call under time pressure; the full user journey
 verified manually end-to-end against the real backend (register, Kanban CRUD, filters,
 search, i18n, PWA install, mobile layout).
 
+Mobile: `flutter test` (model-layer unit tests) plus `flutter analyze` and a real
+`flutter build apk --debug` are gated in CI; the full flow (register → login → task CRUD →
+filter/search → logout → session persisted across relaunch) was verified manually against
+the running backend.
+
 ---
 
 ## CI/CD
@@ -218,8 +245,9 @@ GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs on ev
 
 - **Backend:** `./mvnw test` on Java 21 (H2 profile, no external services needed)
 - **Frontend:** `pnpm install`, `pnpm run lint`, `pnpm run build`
+- **Mobile:** `flutter pub get`, `flutter analyze`, `flutter test`, `flutter build apk --debug`
 
-Both jobs must pass before a PR is mergeable.
+All three jobs must pass before a PR is mergeable.
 
 ---
 
